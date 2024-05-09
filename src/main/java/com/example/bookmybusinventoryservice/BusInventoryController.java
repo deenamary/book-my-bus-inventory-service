@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @RestController
@@ -31,5 +32,24 @@ public class BusInventoryController {
     {
         Optional<BusInventory> busInventory = busInventoryRepository.findById(busid);
         return busInventory.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("update/businventory")
+    public ResponseEntity<BusInventory> updateBusInventory(@RequestBody BusInventory busInventory)
+    {
+        if((busInventoryRepository.findById(busInventory.getBusId()).isPresent())){
+            busInventory.setLastUpdatedDate(new Date());
+            busInventoryRepository.save(busInventory);
+            return ResponseEntity.ok(busInventory);
+        }else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("delete/businventory/{busid}")
+    public ResponseEntity<String> deleteBusInventory(@PathVariable String busid)
+    {
+        busInventoryRepository.deleteById(busid);
+        return ResponseEntity.ok().body("Deleted successfully");
     }
 }
