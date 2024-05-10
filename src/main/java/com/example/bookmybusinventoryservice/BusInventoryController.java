@@ -1,12 +1,9 @@
 package com.example.bookmybusinventoryservice;
 
-import jakarta.ws.rs.BadRequestException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
-import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @RestController
