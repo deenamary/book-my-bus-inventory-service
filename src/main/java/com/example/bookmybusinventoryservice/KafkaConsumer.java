@@ -66,4 +66,36 @@ public class KafkaConsumer {
             kafkaProducer.sendMessage(inventoryUpdateFailureTopic,paymentMessage.getBookingId());
         }
     }
+
+    @Transactional
+    @KafkaListener(topics = "book-my-bus-booking-confirmation-failure-topic", groupId = "console-consumer-68654")
+    public void consumeBookingConfirmationFailureMessage(String message) throws JsonProcessingException {
+
+        logger.info("Received message: " + message);
+
+        ObjectMapper mapper = new ObjectMapper();
+        InventoryUpdateMessage inventoryUpdateMessage = mapper.readValue(message,InventoryUpdateMessage.class);
+
+            //update available seats for this bus
+
+            Optional<BusInventory> busInventory = busInventoryRepository.findById(inventoryUpdateMessage.getBusId());
+            if (busInventory.isEmpty()) {
+                throw new RuntimeException("Invalid bus id");
+            }
+            busInventory.ifPresent(inventory -> {
+                logger.info("Available seats for bus {}: {}", inventoryUpdateMessage.getBusId(), inventory.getAvailableSeats());
+                logger.info("No of seats for which booking confirmation failed : {}", inventoryUpdateMessage.getNoOfBookings());
+                int totalSeats = inventory.getAvailableSeats() + inventoryUpdateMessage.getNoOfBookings();
+                busInventoryRepository.updateAvailableSeatsByBusId(
+                        totalSeats,
+                        inventoryUpdateMessage.getBusId());
+                logger.info("Updated available seats to {}", totalSeats);
+            });
+
+            //send message to booking confirmation topic
+            kafkaProducer.sendMessage(inventoryUpdateFailureTopic, inventoryUpdateMessage.getBookingId());
+            logger.info("Successfully sent the booking confirmation message to booking confirmation kafka topic");
+
+
+    }
 }
